@@ -3,57 +3,7 @@
 #include <ctype.h>
 #include <assert.h>
 #include <stdlib.h>
-void print_bytes(unsigned char *data, int len)
-{
-  int line1_len = 39;
-  for (int i = 0; i < line1_len; ++i) {
-    printf(" %c", data[i]);
-  }
-  printf("\n");
-  for (int i = 0; i < line1_len; ++i) {
-    printf("%02X", data[i]);
-  }
-  printf("\n");
-
-  for (int i = line1_len; i < len; ++i) {
-    printf(" %c", data[i]);
-  }
-  printf("\n");
-  for (int i = line1_len; i < len; ++i) {
-    printf("%02X", data[i]);
-  }
-  printf("\n");
-}
-
-// Convert the first two characters in the input string from hex to a raw
-// value.
-unsigned char nibble_convert(char c)
-{
-  unsigned char val;
-  c = tolower(c);
-  if (c >= 'a' && c <= 'f')
-    val = c - 'a' + 10;
-  else if (c >= '0' && c <= '9')
-    val = c - '0';
-  else {
-    // error
-    val = (unsigned char)-1;
-  }
-
-  assert(val >= 0 && val < 0x10);
-  return val;
-}
-
-unsigned char hex_convert(char *s) 
-{
-  unsigned char val = 0;
-  assert(*s);
-  unsigned char upper = nibble_convert(*s);
-  unsigned char lower = nibble_convert(*(s + 1));
-  val = (upper << 4) | lower;
-
-  return val;
-}
+#include "utils.h"
 
 void main(void) 
 {
@@ -66,13 +16,7 @@ void main(void)
   int input_byte_count = strlen(input) / 2;
 
   unsigned char *bytes = malloc(input_byte_count);
-  unsigned char *s = input;
-  // Step through the input string, 2 characters at a time, saving the 
-  // first 2 characters as a hex number to the bytes array.
-  for (int i = 0; i < input_byte_count; ++i) {
-    bytes[i] = hex_convert(s);
-    s += 2;
-  }
+  decode_hex_string(input, bytes, input_byte_count);
 
   // print_bytes(bytes, input_byte_count);
 
