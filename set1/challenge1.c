@@ -15,7 +15,7 @@ void main(void)
   assert((strlen(input) % 2) == 0);
   int input_byte_count = strlen(input) / 2;
 
-  unsigned char *bytes = malloc(input_byte_count);
+  unsigned char *bytes = malloc(sizeof(char) * input_byte_count);
   decode_hex_string(input, bytes, input_byte_count);
 
   // print_bytes(bytes, input_byte_count);
