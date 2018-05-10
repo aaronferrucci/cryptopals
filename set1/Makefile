@@ -9,7 +9,6 @@ test2: challenge2 expect2.txt
 test3: challenge3
 	./challenge3
 
-
 utils.o: utils.c utils.h
 	gcc -c utils.c
 
