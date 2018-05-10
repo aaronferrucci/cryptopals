@@ -16,6 +16,9 @@ test5: challenge5
 	./challenge5 > output.txt
 	diff output.txt expect5.txt
 
+test6: challenge6
+	./challenge6
+
 utils.o: utils.c utils.h
 	gcc -c utils.c
 
@@ -34,6 +37,9 @@ challenge4.o: challenge4.c c4_data.h utils.h
 challenge5.o: challenge5.c
 	gcc -c challenge5.c
 
+challenge6.o: challenge6.c c6_data.h utils.h
+	gcc -c challenge6.c
+
 challenge1: challenge1.o utils.o
 	gcc -o challenge1 challenge1.o utils.o
 
@@ -48,6 +54,9 @@ challenge4: challenge4.o utils.o
 
 challenge5: challenge5.o
 	gcc -o challenge5 challenge5.o
+
+challenge6: challenge6.o utils.o
+	gcc -o challenge6 challenge6.o utils.o
 
 clean:
 	rm -f output.txt

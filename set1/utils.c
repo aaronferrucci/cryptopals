@@ -2,6 +2,31 @@
 #include <assert.h>
 #include <ctype.h>
 
+size_t count_bits(unsigned char c)
+{
+  size_t count = 0;
+
+  while (c) {
+    count += c & 1;
+    c >>= 1;
+  }
+  return count;
+}
+
+size_t hamming(char *s1, char *s2)
+{
+  assert(strlen(s1) == strlen(s2));
+  size_t distance = 0;
+
+  while (*s1) {
+    distance += count_bits(*s1 ^ *s2);
+    s1++;
+    s2++;
+  }
+
+  return distance;
+}
+
 // Convert the first two characters in the input string from hex to a raw
 // value.
 unsigned char nibble_convert(char c)
