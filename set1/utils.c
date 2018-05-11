@@ -1,6 +1,45 @@
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
+#include <stdio.h>
+
+// The final '==' sequence indicates that the last group contained 
+// only one byte, and '=' indicates that it contained two bytes.
+static unsigned char base64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+unsigned char *base64_decode(unsigned char *base64_data)
+{
+  // convert base64-encoded characters, 4 at a time, into 3 bytes.
+  // One or 2 padding characters ('=') are allowed. They occur when the
+  // unencoded data length is not a multiple of 3:
+  // unencoded length %3    padding
+  //                   0     
+  //                   1       ==
+  //                   2        =
+  size_t len = strlen(base64_data); 
+  printf("data len: %lu\n", len);
+  assert(len % 4 == 0);
+  // Each 4 bytes of input create 3 bytes of output - unless there
+  // are padding bytes.
+  int padding = 0;
+  for (int i = 1; i < 3; ++i) {
+    unsigned char c = base64_data[len - i];
+    if (c == '=') {
+      padding++;
+    }
+  }
+
+  int limit = padding ? len - 4 : len;
+  for (int i = 0; i < limit; i += 4) {
+    // accumulate 4 complete base64 characters into 3 bytes (24 bits)
+    // TO DO: reverse base64[] for fast lookup
+  }
+  if (padding) {
+    // deal the 1 or 2 remaining bytes. Possible to regularize into the 
+    // main loop?
+  }
+
+  return NULL;
+}
 
 size_t count_bits(unsigned char c)
 {
