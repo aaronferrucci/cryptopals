@@ -1,3 +1,21 @@
+tests: test_base64
+
+.PHONY: test_base64 
+test_base64: test_decode64
+	./test_decode64 "cGxlYXN1cmUu" "pleasure."
+	./test_decode64 "c3VyZS4=" "sure."
+	./test_decode64 "ZWFzdXJlLg==" "easure."
+	./test_decode64 "c3VyZS4=" "sure."
+	./test_decode64 \
+	"TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlzIHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2YgdGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGludWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRoZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4=" \
+	"Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure."
+
+test_decode64.o: test_decode64.c utils.h
+	gcc -c test_decode64.c
+
+test_decode64: test_decode64.o utils.o
+	gcc -o test_decode64 test_decode64.o utils.o
+
 test1: challenge1 expect1.txt
 	./challenge1 > output.txt
 	diff output.txt expect1.txt
