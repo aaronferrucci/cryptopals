@@ -15,8 +15,23 @@ int main(void)
 {
   sanity();
 
-  unsigned char *raw = base64_decode(base64_data);
+  unsigned char test[] =
+    "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t";
 
+  size_t len;
+  unsigned char *decode = base64_decode(test, &len);
+  for (int i = 0; i < len; ++i) {
+    printf("%02X\n", decode[i]);
+  }
+  printf("\n");
+  for (int i = 0; i < len; ++i) {
+    printf("%c", decode[i]);
+  }
+  printf("\n");
+
+//  unsigned char *raw = base64_decode(base64_data, &len);
+
+  
   // 1. Let KEYSIZE be the guessed length of the key; try values from 2 to 
   // (say) 40.
   for (int keysize = 2; keysize < 40; ++keysize) {
@@ -30,6 +45,8 @@ int main(void)
     // values. Or take 4 KEYSIZE blocks instead of 2 and average the 
     // distances.
   }
+  free(decode);
+  // free(raw);
   return 0;
 }
 

@@ -2,11 +2,34 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 // The final '==' sequence indicates that the last group contained 
 // only one byte, and '=' indicates that it contained two bytes.
 static unsigned char base64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-unsigned char *base64_decode(unsigned char *base64_data)
+static unsigned char reverse_base64[256];
+
+unsigned char decode_base64_char(unsigned char c)
+{
+  static int initialized = 0;
+  if (!initialized) {
+    printf("decode_base64_char(): initializing\n");
+    for (int i = 0; i < sizeof(reverse_base64) / sizeof(*reverse_base64); ++i)
+      reverse_base64[i] = -1; // invalid
+
+    unsigned char *const b64_ptr = base64;
+    for (int i = 0; i < strlen(base64); ++i) {
+      reverse_base64[base64[i]] = i;
+    }
+
+    initialized = 1;
+  }
+
+  return reverse_base64[c];
+}
+
+// Will allocate memory; caller is responsible for calling free().
+unsigned char *base64_decode(unsigned char *const base64_data, size_t *output_len)
 {
   // convert base64-encoded characters, 4 at a time, into 3 bytes.
   // One or 2 padding characters ('=') are allowed. They occur when the
@@ -15,30 +38,47 @@ unsigned char *base64_decode(unsigned char *base64_data)
   //                   0     
   //                   1       ==
   //                   2        =
-  size_t len = strlen(base64_data); 
-  printf("data len: %lu\n", len);
-  assert(len % 4 == 0);
+  *output_len = 0;
+  size_t input_len = strlen(base64_data); 
+  printf("data input_len: %lu\n", input_len);
+  assert(input_len % 4 == 0);
   // Each 4 bytes of input create 3 bytes of output - unless there
   // are padding bytes.
   int padding = 0;
   for (int i = 1; i < 3; ++i) {
-    unsigned char c = base64_data[len - i];
+    unsigned char c = base64_data[input_len - i];
     if (c == '=') {
       padding++;
     }
   }
 
-  int limit = padding ? len - 4 : len;
+  *output_len = input_len * 3 / 4;
+  *output_len -= padding;
+  printf("output_len: %lu\n", *output_len);
+  unsigned char *output_data =
+    (unsigned char*)malloc(*output_len * sizeof(char));
+  int output_data_index = 0;
+  int limit = padding ? input_len - 4 : input_len;
   for (int i = 0; i < limit; i += 4) {
+    unsigned int bits24 = 0;
     // accumulate 4 complete base64 characters into 3 bytes (24 bits)
     // TO DO: reverse base64[] for fast lookup
+    for (int j = 0; j < 4; ++j)  {
+      unsigned char bits6 = decode_base64_char(base64_data[i + j]);
+      bits24 |= bits6 << (6 * (4 - j - 1));
+    }
+
+    for (int j = 0; j < 3; ++j) {
+      bits24 <<= 8;
+      output_data[output_data_index++] = (bits24 & 0xFF000000) >> 24;
+    }
   }
   if (padding) {
     // deal the 1 or 2 remaining bytes. Possible to regularize into the 
     // main loop?
   }
 
-  return NULL;
+  return output_data;
 }
 
 size_t count_bits(unsigned char c)
