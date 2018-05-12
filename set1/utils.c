@@ -34,63 +34,45 @@ unsigned char *base64_decode(unsigned char *const base64_data, size_t *output_le
   // convert base64-encoded characters, 4 at a time, into 3 bytes.
   // One or 2 padding characters ('=') are allowed. They occur when the
   // unencoded data length is not a multiple of 3:
-  // unencoded length %3    padding
-  //                   0     
-  //                   1       ==
-  //                   2        =
+  // unencoded length mod 3    padding
+  //                      0
+  //                      1        ==
+  //                      2         =
   *output_len = 0;
   size_t input_len = strlen(base64_data); 
   assert(input_len % 4 == 0);
   // Each 4 bytes of input create 3 bytes of output - unless there
-  // are padding bytes.
+  // are padding bytes. If there are padding bytes, think of the 
+  // input as split into "full-size" and "ragged" regions.
   int padding = 0;
   for (int i = 1; i < 3; ++i) {
     unsigned char c = base64_data[input_len - i];
-    if (c == '=') {
+    if (c == '=')
       padding++;
-    }
   }
 
-  *output_len = input_len * 3 / 4;
-  *output_len -= padding;
+  *output_len = (input_len * 3 / 4) - padding;
   unsigned char *output_data =
     (unsigned char*)calloc(sizeof(char), *output_len);
   int output_data_index = 0;
-  int limit = padding ? input_len - 4 : input_len;
-  for (int i = 0; i < limit; i += 4) {
+  int full_size_limit = padding ? input_len - 4 : input_len;
+  for (int i = 0; i < input_len; i += 4) {
     unsigned int bits24 = 0;
     unsigned int mask = 0xFF;
     unsigned int shift = 0;
-    // accumulate 4 complete base64 characters into 3 bytes (24 bits)
-    for (int j = 0; j < 4; ++j)  {
+    int in_fullsize_region = i < full_size_limit;
+    // accumulate 4 (or fewer) complete base64 characters into 3 bytes (24 bits)
+    int input_char_limit = in_fullsize_region ? 4 : 4 - padding;
+    for (int j = 0; j < input_char_limit; ++j)  {
       unsigned char bits6 = decode_base64_char(base64_data[i + j]);
       bits24 = (bits24 << 6) | bits6;
       mask <<= 6;
       shift += 6;
     }
 
-    for (int j = 0; j < 3; ++j) {
-      bits24 <<= 8;
-      output_data[output_data_index++] = (bits24 & mask) >> shift;
-    }
-  }
-
-  if (padding) {
-    // deal the 1 or 2 remaining output bytes. Possible to regularize into the 
-    // main loop?
-    // padding  input bytes output bytes
-    //       1            3            2
-    //       2            2            1
-    unsigned int bits24 = 0;
-    unsigned int mask = 0xFF;
-    unsigned int shift = 0;
-    for (int j = 0; j < 4 - padding; ++j)  {
-      unsigned char bits6 = decode_base64_char(base64_data[limit + j]);
-      bits24 = (bits24 << 6) | bits6;
-      mask <<= 6;
-      shift += 6;
-    }
-    for (int j = 0; j < 3 - padding; ++j) {
+    // extract the 3 (or fewer) output bytes.
+    int output_char_limit = in_fullsize_region ? 3 : 3 - padding;
+    for (int j = 0; j < output_char_limit; ++j) {
       bits24 <<= 8;
       output_data[output_data_index++] = (bits24 & mask) >> shift;
     }
