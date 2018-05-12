@@ -2,3 +2,4 @@
 *.o
 output.txt
 challenge?
+test_decode64
