@@ -92,12 +92,11 @@ size_t count_bits(unsigned char c)
   return count;
 }
 
-size_t hamming(char *s1, char *s2)
+size_t hamming(char *s1, char *s2, size_t len)
 {
-  assert(strlen(s1) == strlen(s2));
   size_t distance = 0;
 
-  while (*s1) {
+  for (int i = 0; i < len; ++i) {
     distance += count_bits(*s1 ^ *s2);
     s1++;
     s2++;
