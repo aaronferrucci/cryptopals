@@ -14,7 +14,7 @@ void sanity(void)
   assert(37 == hamming(s1, s2, strlen(s1)));
 }
 
-#define MIN_KEYSIZE 2
+#define MIN_KEYSIZE 2 
 #define MAX_KEYSIZE 40
 int main(void) 
 {
@@ -26,25 +26,27 @@ int main(void)
   
   // 1. Let KEYSIZE be the guessed length of the key; try values from 2 to 
   // (say) 40.
-  unsigned char buf_1st[MAX_KEYSIZE];
-  unsigned char buf_2nd[MAX_KEYSIZE];
   printf("%s\t%s\t%s\n", "norm distance", "keysize", "hamming distance");
-  for (int keysize = MIN_KEYSIZE; keysize < MAX_KEYSIZE; ++keysize) {
+  for (int keysize = MIN_KEYSIZE; keysize <= MAX_KEYSIZE; ++keysize) {
     // 3. For each KEYSIZE, take the first KEYSIZE worth of bytes, and the 
     // second KEYSIZE worth of bytes, and find the edit distance between 
     // them. Normalize this result by dividing by KEYSIZE.
-    strncpy(buf_1st, raw, keysize);
-    buf_1st[keysize] = '\0';
-    strncpy(buf_2nd, raw + keysize, keysize);
-    buf_2nd[keysize] = '\0';
-    size_t dist = hamming(buf_1st, buf_2nd, keysize);
-    printf("%g\t%lu\t%d\n", (float)dist / keysize, keysize, dist);
+    size_t dist = 0;
+    int diffs;
+    for (diffs = 0; diffs < 3; ++diffs) {
+      dist += hamming(raw + diffs * keysize, raw + (diffs + 1) * keysize, keysize);
+    }
+    printf("%g\t\t%d\t%lu\n", (float)dist / diffs / keysize, keysize, dist);
     
     // 4. The KEYSIZE with the smallest normalized edit distance is probably 
     // the key. You could proceed perhaps with the smallest 2-3 KEYSIZE 
     // values. Or take 4 KEYSIZE blocks instead of 2 and average the 
     // distances.
   }
+  // Now that you probably know the KEYSIZE: break the ciphertext into blocks 
+  // of KEYSIZE length.
+  // Now transpose the blocks: make a block that is the first byte of every 
+  // block, and a block that is the second byte of every block, and so on.
 
   free(raw);
   return 0;
