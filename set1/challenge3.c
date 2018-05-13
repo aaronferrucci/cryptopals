@@ -29,17 +29,6 @@ float score_spacey(unsigned char *data, int len) {
   return (float)scount / len;
 }
 
-float score_etaoin(unsigned char *data, int len) {
-  // Simple: ratio of 'e' and 'E' to byte count
-  int ecount = 0;
-  for (int i = 0; i < len; ++i) {
-    if (tolower(data[i]) == 'e')
-      ecount++;
-  }
-
-  return (float)ecount / len;
-}
-
 void decode(unsigned char *data, unsigned char key, int len)
 {
   for (int i = 0; i < len; ++i) {

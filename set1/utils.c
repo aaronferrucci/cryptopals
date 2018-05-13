@@ -147,3 +147,17 @@ void decode_hex_string(char *s, unsigned char *bytes, int byte_count)
     bytes[i] = hex_convert(s);
 }
 
+float score_etaoin(unsigned char *data, int len)
+{
+  // Simple: ratio of 'e' and 'E' to byte count
+  // TO DO: add more letters, compute score as least-squares 
+  // distance to expected frequencies.
+  int ecount = 0;
+  for (int i = 0; i < len; ++i) {
+    if (tolower(data[i]) == 'e')
+      ecount++;
+  }
+
+  return (float)ecount / len;
+}
+
