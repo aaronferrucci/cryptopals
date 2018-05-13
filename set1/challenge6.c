@@ -47,6 +47,12 @@ int main(void)
   // of KEYSIZE length.
   // Now transpose the blocks: make a block that is the first byte of every 
   // block, and a block that is the second byte of every block, and so on.
+  // implementation notes:
+  // create KEYSIZE arrays, each of length ceil(input data size) / KEYSIZE
+  // initialize array "i" with input data values i, 2*i, 3*i, ...
+  //   note that allocation of these arrays isn't actually required - all I'm
+  //   doing is stepping through the input data in a different linear order.
+  //
 
   free(raw);
   return 0;
