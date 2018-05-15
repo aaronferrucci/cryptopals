@@ -7,4 +7,9 @@ size_t count_bits(unsigned char c);
 size_t hamming(char *s1, char *s2, size_t len);
 unsigned char *base64_decode(unsigned char *base64_data, size_t *len);
 float score_etaoin(unsigned char *data, int len);
+
+typedef struct {
+  unsigned char letter; 
+  float frequency; // in [0, 1]
+} t_letter_frequency;
 #endif // UTILS_H

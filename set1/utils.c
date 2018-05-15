@@ -3,6 +3,8 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
+#include "utils.h"
 
 // The final '==' sequence indicates that the last group contained 
 // only one byte, and '=' indicates that it contained two bytes.
@@ -146,18 +148,42 @@ void decode_hex_string(char *s, unsigned char *bytes, int byte_count)
   for (int i = 0; i < byte_count; ++i, s += 2)
     bytes[i] = hex_convert(s);
 }
+// I found these letter frequencies here:
+//   http://norvig.com/mayzner.html
+static t_letter_frequency etaoin[] = {
+  ' ', 0.200,
+  'e', 0.125,
+  't', 0.093,
+  'a', 0.080,
+  'o', 0.076,
+  'i', 0.076,
+  'n', 0.072,
+};
 
+static float bell(float x, float mu, float sigma)
+{
+  float exponent = -(x - mu) * (x - mu) / (2 * sigma * sigma);
+  return exp(exponent) / sigma;
+}
+
+// Output: 1 if a perfect match to the given etaoin frequencies
+// tends toward 0 for less-perfect matches.
 float score_etaoin(unsigned char *data, int len)
 {
   // Simple: ratio of 'e' and 'E' to byte count
   // TO DO: add more letters, compute score as least-squares 
   // distance to expected frequencies.
-  int ecount = 0;
-  for (int i = 0; i < len; ++i) {
-    if (tolower(data[i]) == 'e')
-      ecount++;
+  float score = 0.;
+  for (int i = 0; i < sizeof(etaoin) / sizeof(*etaoin); ++i) {
+    int count = 0;
+    for (int j = 0; j < len; ++j) {
+      if (tolower(data[j]) == etaoin[i].letter)
+        count++;
+    }
+    float delta = bell((float)count / len, etaoin[i].frequency, 0.125);
+    score += delta;
   }
 
-  return (float)ecount / len;
+  return score;
 }
 

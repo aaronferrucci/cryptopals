@@ -17,7 +17,7 @@ test_decode64.o: test_decode64.c utils.h
 	gcc -c test_decode64.c
 
 test_decode64: test_decode64.o utils.o
-	gcc -o test_decode64 test_decode64.o utils.o
+	gcc -o test_decode64 test_decode64.o utils.o -lm
 
 test1: challenge1 expect1.txt
 	./challenge1 > output.txt
@@ -62,22 +62,22 @@ challenge6.o: challenge6.c c6_data.h utils.h
 	gcc -c challenge6.c
 
 challenge1: challenge1.o utils.o
-	gcc -o challenge1 challenge1.o utils.o
+	gcc -o challenge1 challenge1.o utils.o -lm
 
 challenge2: challenge2.o utils.o
-	gcc -o challenge2 challenge2.o utils.o
+	gcc -o challenge2 challenge2.o utils.o -lm
 
 challenge3: challenge3.o utils.o
-	gcc -o challenge3 challenge3.o utils.o
+	gcc -o challenge3 challenge3.o utils.o -lm
 
 challenge4: challenge4.o utils.o
-	gcc -o challenge4 challenge4.o utils.o
+	gcc -o challenge4 challenge4.o utils.o -lm
 
 challenge5: challenge5.o
 	gcc -o challenge5 challenge5.o
 
 challenge6: challenge6.o utils.o
-	gcc -o challenge6 challenge6.o utils.o
+	gcc -o challenge6 challenge6.o utils.o -lm
 
 clean:
 	rm -f output.txt

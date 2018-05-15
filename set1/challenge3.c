@@ -65,13 +65,15 @@ int main(void)
       copy[i] = raw[i];
     }
     decode(copy, key, input_byte_count);
-    scores[key].printability = score_printability(copy, input_byte_count);
+    // scores[key].printability = score_printability(copy, input_byte_count);
+    // scores[key].spacey = score_spacey(copy, input_byte_count);
+    // float sum = scores[key].printability + scores[key].etaoin + scores[key].spacey;
     scores[key].etaoin = score_etaoin(copy, input_byte_count);
-    scores[key].spacey = score_spacey(copy, input_byte_count);
-    float sum = scores[key].printability + scores[key].etaoin + scores[key].spacey;
+    float score = scores[key].etaoin;
+    // printf("%g: key: %c (0x%02X)\n", score, isprint(key) ? key : '*', key);
 
-    if (sum > max_score) {
-      max_score = sum;
+    if (score > max_score) {
+      max_score = score;
       max_key = key;
     }
   }
