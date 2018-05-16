@@ -151,13 +151,13 @@ void decode_hex_string(char *s, unsigned char *bytes, int byte_count)
 // I found these letter frequencies here:
 //   http://norvig.com/mayzner.html
 static t_letter_frequency etaoin[] = {
-  ' ', 0.200,
-  'e', 0.125,
-  't', 0.093,
-  'a', 0.080,
-  'o', 0.076,
-  'i', 0.076,
-  'n', 0.072,
+  ' ', 0.200, 0,
+  'e', 0.125, 0,
+  't', 0.093, 0,
+  'a', 0.080, 0,
+  'o', 0.076, 0,
+  'i', 0.076, 0,
+  'n', 0.072, 0,
 };
 
 static float bell(float x, float mu, float sigma)
@@ -166,17 +166,15 @@ static float bell(float x, float mu, float sigma)
   return exp(exponent) / sigma;
 }
 
-// Output: 1 if a perfect match to the given etaoin frequencies
-// tends toward 0 for less-perfect matches.
-float score_etaoin(unsigned char *data, int len)
+// Output: larger numbers for better matches to the given etaoin frequencies
+// lower numbers for less-perfect match. (It would be nice to normalize this
+// to a range [0, 1].)
+float score_etaoin(unsigned char *data, int start, int stride, int len)
 {
-  // Simple: ratio of 'e' and 'E' to byte count
-  // TO DO: add more letters, compute score as least-squares 
-  // distance to expected frequencies.
   float score = 0.;
   for (int i = 0; i < sizeof(etaoin) / sizeof(*etaoin); ++i) {
     int count = 0;
-    for (int j = 0; j < len; ++j) {
+    for (int j = start; j < len; j += stride) {
       if (tolower(data[j]) == etaoin[i].letter)
         count++;
     }
@@ -185,5 +183,47 @@ float score_etaoin(unsigned char *data, int len)
   }
 
   return score;
+}
+
+void xor_decode(unsigned char *data, unsigned char key, int len)
+{
+  for (int i = 0; i < len; ++i) {
+    data[i] ^= key;
+  }
+}
+
+void repeating_xor_decode(unsigned char *data, unsigned char *key, int len)
+{
+  unsigned char *cur_key = key;
+  for (int i = 0; i < len; ++i) {
+    data[i] ^= *cur_key;
+    cur_key++;
+    if (!*cur_key)
+      cur_key = key;
+  }
+}
+
+unsigned char max_xor_key(unsigned char *data, int start, int stride, int len)
+{
+  float max_score = 0;
+  unsigned char max_key;
+  unsigned char *copy = malloc(sizeof(char) * len);
+  for (int key = 0; key < 256; ++key) {
+    for (int i = 0; i < len; ++i) {
+      copy[i] = data[i];
+    }
+    xor_decode(copy, key, len);
+    float score = score_etaoin(copy, start, stride, len);
+    // printf("%g: key: %c (0x%02X)\n", score, isprint(key) ? key : '*', key);
+
+    if (score > max_score) {
+      max_score = score;
+      max_key = key;
+    }
+  }
+
+  free(copy); copy = NULL;
+
+  return max_key;
 }
 

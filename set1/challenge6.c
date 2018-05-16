@@ -36,7 +36,7 @@ int main(void)
     for (diffs = 0; diffs < 3; ++diffs) {
       dist += hamming(raw + diffs * keysize, raw + (diffs + 1) * keysize, keysize);
     }
-    printf("%g\t\t%d\t%lu\n", (float)dist / diffs / keysize, keysize, dist);
+    // printf("%g\t\t%d\t%lu\n", (float)dist / diffs / keysize, keysize, dist);
     
     // 4. The KEYSIZE with the smallest normalized edit distance is probably 
     // the key. You could proceed perhaps with the smallest 2-3 KEYSIZE 
@@ -54,6 +54,19 @@ int main(void)
   //   doing is stepping through the input data in a different linear order.
   //
 
+  int keysize = 29;
+  printf("keysize: %d\n", keysize);
+  unsigned char *key = malloc(keysize + 1);
+  int i;
+  for (i = 0; i < keysize; ++i) {
+    key[i] = max_xor_key(raw, i, keysize, len);
+  }
+  key[i] = '\0';
+  printf("key: '%s'\n", key);
+  repeating_xor_decode(raw, key, len); 
+  printf("decoded: '%s'\n", raw);
+
+  free(key);
   free(raw);
   return 0;
 }
