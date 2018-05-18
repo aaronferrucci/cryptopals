@@ -64,7 +64,7 @@ challenge5.o: challenge5.c
 challenge6.o: challenge6.c c6_data.h utils.h
 	gcc -c challenge6.c
 
-challenge7.o: challenge7.c c7_data.h
+challenge7.o: challenge7.c c7_data.h utils.h
 	gcc -c challenge7.c
 
 challenge1: challenge1.o utils.o
@@ -85,8 +85,8 @@ challenge5: challenge5.o
 challenge6: challenge6.o utils.o
 	gcc -o challenge6 challenge6.o utils.o -lm
 
-challenge7: challenge7.o
-	gcc -o challenge7 challenge7.o -lssl -lcrypto
+challenge7: challenge7.o utils.o
+	gcc -o challenge7 challenge7.o -lssl -lcrypto utils.o -lm
 
 clean:
 	rm -f output.txt
