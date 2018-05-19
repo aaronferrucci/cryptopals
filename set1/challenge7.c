@@ -99,12 +99,30 @@ int main(void)
 {
   unsigned char *raw;
   size_t raw_len;
+  INMEM_FILE crypt, plain;
   printf("%lu bytes of base64-encoded data\n", strlen(base64_data));
 
   raw = base64_decode(base64_data, &raw_len);
   printf("%lu bytes of decoded data\n", raw_len);
 
+  crypt.data = raw;
+  crypt.cur_index = 0;
+  crypt.size = raw_len;
+
+  plain.size = raw_len + EVP_MAX_BLOCK_LENGTH;
+  unsigned char *plaintext =
+    (unsigned char*)malloc(sizeof(unsigned char) * plain.size);
+  plain.data = plaintext;
+  plain.cur_index = 0;
+
+  decrypt(&crypt, &plain);
+
+  plain.data[plain.cur_index++] = '\0';
+  printf("after decryption, plaintext has size %lu\n", plain.cur_index);
+  printf("\n'%s'\n", plain.data);
+
   free(raw); raw = NULL;
+  free(plaintext); plaintext = NULL;
   return 0;
 }
 
