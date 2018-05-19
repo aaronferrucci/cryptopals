@@ -207,7 +207,7 @@ unsigned char max_xor_key(unsigned char *data, int start, int stride, int len)
 {
   float max_score = 0;
   unsigned char max_key;
-  unsigned char *copy = malloc(sizeof(char) * len);
+  unsigned char *copy = malloc(sizeof(unsigned char) * len);
   for (int key = 0; key < 256; ++key) {
     for (int i = 0; i < len; ++i) {
       copy[i] = data[i];
