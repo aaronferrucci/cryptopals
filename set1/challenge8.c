@@ -67,9 +67,16 @@ int main(void)
     }
     // printf("%c\n", all_unique ? ' ' : '*');
     if (!all_unique) {
-      printf("\nciphertext element %d has non-unique blocks\n", i);
-      for (int j = 0; j < BLOCKS_PER_LINE; ++j) {
-        printf("  %lX\n", *(__uint128_t*)(raw + BLOCK_SIZE * j));
+      printf("\nciphertext element %d has non-unique blocks:\n", i);
+      // oops, endianness. Below works for a big-endian processor... I guess
+      // for (int j = 0; j < BLOCKS_PER_LINE; ++j) {
+      //   printf("  %lX\n", *(__uint128_t*)(raw + BLOCK_SIZE * j));
+      // }
+
+      // To the surprise of this little-endian processor, the MSbyte of each
+      // 16-byte block occurs first (in left to right order).
+      for (int j = 0; j < RAW_LEN; ++j) {
+        printf("%s%02x%s", (j % BLOCK_SIZE) == 0 ? "  " : "", raw[j], (j % BLOCK_SIZE) == BLOCK_SIZE - 1 ? "\n" : "");
       }
     }
   }
