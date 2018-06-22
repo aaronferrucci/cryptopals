@@ -36,9 +36,10 @@ do_test_ecb128.o: do_test_ecb128.c
 
 do_test_ecb128: do_test_ecb128.o utils.o cbc_ecb128.o
 	gcc -o do_test_ecb128 do_test_ecb128.o utils.o cbc_ecb128.o -lssl -lcrypto -lm
-
 clean:
 	rm -f output.txt
 	rm -f challenge?
 	rm -f challenge??
 	rm -f *.o
+	rm -f do_test_ecb128
+
