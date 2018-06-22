@@ -14,6 +14,9 @@ challenge9.o: challenge9.c
 challenge9: challenge9.o
 	gcc -o challenge9 challenge9.o
 
+cbc_ecb128.o: cbc_ecb128.c
+	gcc -c cbc_ecb128.c -I ../set1
+
 challenge10.o: challenge10.c
 	gcc -c challenge10.c -I ../set1
 
@@ -21,10 +24,11 @@ UTILS := ../set1
 utils.o: $(UTILS)/utils.c
 	gcc -c $(UTILS)/utils.c -I $(UTILS)
 
-challenge10: challenge10.o utils.o
-	gcc -o challenge10 challenge10.o utils.o -lssl -lcrypto -lm
+challenge10: challenge10.o utils.o cbc_ecb128.o
+	gcc -o challenge10 challenge10.o utils.o cbc_ecb128.o -lssl -lcrypto -lm
 
 clean:
 	rm -f output.txt
-	rm -f challenge9
+	rm -f challenge?
+	rm -f challenge??
 	rm -f *.o
