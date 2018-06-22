@@ -4,3 +4,4 @@ output.txt
 challenge?
 challenge??
 test_decode64
+do_test_ecb128
