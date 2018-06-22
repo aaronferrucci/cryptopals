@@ -14,6 +14,7 @@ float score_etaoin(unsigned char *data, int start, int stride, int len);
 unsigned char max_xor_key(unsigned char *data, int start, int stride, int len);
 void xor_decode(unsigned char *data, unsigned char key, int len);
 void repeating_xor_decode(unsigned char *data, unsigned char *key, int len);
+void print16(unsigned char *data);
 
 typedef struct {
   unsigned char letter; 

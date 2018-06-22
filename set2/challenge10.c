@@ -7,18 +7,6 @@
 #include "c10_data.h"
 #include "utils.h"
 
-void print16(unsigned char *data)
-{
-  for (int i = 0; i < 16; ++i) {
-    printf("%02X ", data[i]);
-  }
-  printf("  ");
-  for (int i = 0; i < 16; ++i) {
-    printf("%c", isprint(data[i]) ? data[i] : '.');
-  }
-  printf("\n");
-}
-
 void main(void)
 {
   unsigned char key[] = "YELLOW SUBMARINE";
