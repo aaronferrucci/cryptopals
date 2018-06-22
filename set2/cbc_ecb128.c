@@ -4,9 +4,11 @@
 #include <openssl/x509.h>
 
 #include "utils.h"
+#include <assert.h>
 
 int cbc_or_ecb128(unsigned char *input, unsigned char *output, unsigned char *iv, unsigned char *key, int do_encrypt, int is_cbc)
 {
+  assert(!is_cbc || iv != NULL);
   int outlen;
   // new'ing and freeing the context seems wasteful, since I never
   // re-use it. Is there a simpler way to do ecb?
@@ -32,9 +34,9 @@ int cbc128(unsigned char *input, unsigned char *output, unsigned char *iv, unsig
   return cbc_or_ecb128(input, output, iv, key, do_encrypt, 1);
 }
 
-int ecb128(unsigned char *input, unsigned char *output, unsigned char *iv, unsigned char *key, int do_encrypt)
+int ecb128(unsigned char *input, unsigned char *output, unsigned char *key, int do_encrypt)
 {
-  return cbc_or_ecb128(input, output, iv, key, do_encrypt, 0);
+  return cbc_or_ecb128(input, output, NULL, key, do_encrypt, 0);
 }
 
 int cbc128_decrypt(unsigned char *input, unsigned char *output, size_t len, unsigned char *iv, unsigned char *key)
@@ -44,5 +46,24 @@ int cbc128_decrypt(unsigned char *input, unsigned char *output, size_t len, unsi
     ret &= cbc128(input + i, output + i, i == 0 ? iv : input + i - 16, key, 0);
   }
   return ret;
+}
+
+int ecb128_crypt(unsigned char *input, unsigned char *output, size_t len, unsigned char *key, int do_encrypt)
+{
+  int ret = 1;
+  for (int i = 0; i < len; i += 16) {
+    ret &= ecb128(input + i, output + i, key, do_encrypt);
+  }
+  return ret;
+}
+
+int ecb128_decrypt(unsigned char *input, unsigned char *output, size_t len, unsigned char *key)
+{
+  return ecb128_crypt(input, output, len, key, 0);
+}
+
+int ecb128_encrypt(unsigned char *input, unsigned char *output, size_t len, unsigned char *key)
+{
+  return ecb128_crypt(input, output, len, key, 1);
 }
 

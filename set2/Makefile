@@ -8,6 +8,10 @@ test9: challenge9
 	./challenge9 > output.txt
 	diff output.txt expect9.txt
 
+test_ecb128: do_test_ecb128
+	./do_test_ecb128 > output.txt
+	cat output.txt
+
 challenge9.o: challenge9.c
 	gcc -c challenge9.c
 
@@ -26,6 +30,12 @@ utils.o: $(UTILS)/utils.c
 
 challenge10: challenge10.o utils.o cbc_ecb128.o
 	gcc -o challenge10 challenge10.o utils.o cbc_ecb128.o -lssl -lcrypto -lm
+
+do_test_ecb128.o: do_test_ecb128.c
+	gcc -c do_test_ecb128.c -I ../set1
+
+do_test_ecb128: do_test_ecb128.o utils.o cbc_ecb128.o
+	gcc -o do_test_ecb128 do_test_ecb128.o utils.o cbc_ecb128.o -lssl -lcrypto -lm
 
 clean:
 	rm -f output.txt
