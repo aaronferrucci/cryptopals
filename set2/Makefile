@@ -12,6 +12,10 @@ test_ecb128: do_test_ecb128
 	./do_test_ecb128 > output.txt
 	cat output.txt
 
+test_cbc128: do_test_cbc128
+	./do_test_cbc128 > output.txt
+	cat output.txt
+
 challenge9.o: challenge9.c
 	gcc -c challenge9.c
 
@@ -36,6 +40,13 @@ do_test_ecb128.o: do_test_ecb128.c
 
 do_test_ecb128: do_test_ecb128.o utils.o cbc_ecb128.o
 	gcc -o do_test_ecb128 do_test_ecb128.o utils.o cbc_ecb128.o -lssl -lcrypto -lm
+
+do_test_cbc128.o: do_test_cbc128.c
+	gcc -c do_test_cbc128.c -I ../set1
+
+do_test_cbc128: do_test_cbc128.o utils.o cbc_ecb128.o
+	gcc -o do_test_cbc128 do_test_cbc128.o utils.o cbc_ecb128.o -lssl -lcrypto -lm
+
 clean:
 	rm -f output.txt
 	rm -f challenge?
