@@ -5,3 +5,4 @@ challenge?
 challenge??
 test_decode64
 do_test_ecb128
+do_test_cbc128
