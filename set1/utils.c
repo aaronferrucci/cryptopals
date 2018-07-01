@@ -227,15 +227,33 @@ unsigned char max_xor_key(unsigned char *data, int start, int stride, int len)
   return max_key;
 }
 
-void print16(unsigned char *data)
+void printLine(unsigned char *data, size_t len)
 {
-  for (int i = 0; i < 16; ++i) {
+  for (int i = 0; i < len; ++i) {
     printf("%02X ", data[i]);
   }
+  for (int i = len; i < 16; ++i) {
+    printf("   ");
+  }
   printf("  ");
-  for (int i = 0; i < 16; ++i) {
+  for (int i = 0; i < len; ++i) {
     printf("%c", isprint(data[i]) ? data[i] : '.');
   }
+  for (int i = len; i < 16; ++i) {
+    printf(" ");
+  }
   printf("\n");
+}
+
+void printX(unsigned char *data, size_t len)
+{
+  for (int i = 0; i < len; i += 16) {
+    printLine(data + i, len - i > 16 ? 16 : len - i);
+  }
+}
+
+void print16(unsigned char *data)
+{
+  printLine(data, 16);
 }
 

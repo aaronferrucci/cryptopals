@@ -15,6 +15,7 @@ unsigned char max_xor_key(unsigned char *data, int start, int stride, int len);
 void xor_decode(unsigned char *data, unsigned char key, int len);
 void repeating_xor_decode(unsigned char *data, unsigned char *key, int len);
 void print16(unsigned char *data);
+void printX(unsigned char *data, size_t len);
 
 typedef struct {
   unsigned char letter; 
