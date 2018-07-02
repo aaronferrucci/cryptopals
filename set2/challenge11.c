@@ -53,31 +53,50 @@ unsigned char *random16(unsigned char data[16])
   return randomX(data, 16);
 }
 
+#define ITERS 1024
 // returns the data, padded and encrypted. Caller frees.
+unsigned char actual_log[ITERS];
 unsigned char *pad_and_encrypt(unsigned char *data, size_t *len)
 {
+  static int log_index = 0;
   unsigned char key[16];
-  random16(key);
+  unsigned char iv[16];
   size_t prefix, suffix;
+  random16(key);
+  random16(iv);
 
   prefix = (rand() % 6) + 5;
-  printf("prefix: %lu\n", prefix);
   suffix = (rand() % 6) + 5;
-  printf("suffix: %lu\n", suffix);
+  // printf("prefix: %d\n", prefix);
 
   unsigned char *padding = pad(prefix + *len + suffix, 16);
   size_t aug_len = prefix + *len + suffix + strlen(padding);
+  unsigned char *plaintext = malloc(aug_len * sizeof(unsigned char));
   unsigned char *output = malloc(aug_len * sizeof(unsigned char));
 
-  randomX(output, prefix);
-  randomX(output + prefix + *len, suffix);
+  randomX(plaintext, prefix);
+  randomX(plaintext + prefix + *len, suffix);
   for (int i = prefix; i < prefix + *len; ++i) {
-    output[i] = data[i - prefix];
+    plaintext[i] = data[i - prefix];
   }
   for (int i = prefix + *len + suffix; i < aug_len; ++i) {
-    output[i] = padding[i - prefix - *len - suffix];
+    plaintext[i] = padding[i - prefix - *len - suffix];
   }
   free(padding);
+  // printf("plaintext:\n");
+  // printX(plaintext, *len);
+
+  // encrypt "plaintext"
+  int is_cbc = rand() & 1;
+  if (log_index < ITERS)
+    actual_log[log_index++] = is_cbc;
+
+  if (is_cbc) {
+    cbc128_encrypt(plaintext, output, aug_len, iv, key);
+  } else {
+    ecb128_encrypt(plaintext, output, aug_len, key);
+  }
+  free(plaintext);
 
   *len = aug_len;
   return output;
@@ -100,38 +119,58 @@ unsigned char *random_data(size_t len)
   return data;
 }
 
-void main(void)
+// return:
+// 0 if ecb encryption (16-byte blocks) detected
+// 1 otherwise (assume cbc)
+unsigned char detect_encryption_method(unsigned char *crypt)
 {
-  unsigned char key[16];
+  // given prefix padding of 5-10 bytes, the first block will be different
+  // from subsequent blocks. But starting at block number 1 (2nd block), given
+  // replicated input data, output data is identical.
+  // if (11+16)th, (11+32)th, (11+48)th bytes are identical, assume ecb.
+  // odds should be 1 in 256^2 of a false positive (cbc matching that test)
+  const int blocksize = 16;
+  if (crypt[blocksize] == crypt[2*blocksize] &&
+      crypt[blocksize] == crypt[3*blocksize] &&
+      crypt[blocksize] == crypt[4*blocksize])
+    return 0;
+  return 1;
+}
+
+#define LEN 256
+int main(void)
+{
+  unsigned char predicted_log[ITERS] = {'\0',};
   srand(time(NULL));
+  int pred_index = 0;
+  for (int i = 0; i < ITERS; ++i) {
+    unsigned char *data = random_data(LEN);
+    // printf("data:\n");
+    // printX(data, LEN);
 
-  unsigned char *data = random_data(48);
-  printf("data:\n");
-  printX(data, 48);
+    unsigned char *output;
+    size_t len = LEN;
+    output = pad_and_encrypt(data, &len);
+    free(data);
 
-  unsigned char *output;
-  size_t len = 48;
-  output = pad_and_encrypt(data, &len);
-  printf("output (%lu):\n", len);
-  printX(output, len);
-  free(data);
-  free(output);
+    // printf("output (%lu):\n", len);
+    // printX(output, len);
+    unsigned char pred = detect_encryption_method(output);
+    predicted_log[pred_index++] = pred;
+    free(output);
+  }
 
+  // Compare actual and predicted
+  unsigned int errors = 0;
+  for (int i = 0; i < ITERS; ++i) {
+    if (predicted_log[i] != actual_log[i]) {
+      printf("mismatch at index %d (predicted: %d; actual: %d)\n",
+        i, predicted_log[i], actual_log[i]);
+      errors++;
+    }
+  }
+  printf("%d errors out of %d tests\n", errors, ITERS);
 
-  // To do: generalize print16 - print out a requested number of bytes, 16
-  // per line, with fewer perhaps on the final line.
-
-  // for (int i = 0; i < 16; ++i) {
-  //   printf("%d ", rand() % 6 + 5);
-  // }
-  // printf("\n");
-
-  // for (int i = 0; i < 16; ++i) {
-  //   unsigned char *pad_str = pad(i, 16);
-  //   printf("%2d: ", i);
-  //   print16(pad_str);
-  //   free(pad_str);
-  // }
-
+  return errors;
 }
 
