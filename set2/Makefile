@@ -1,5 +1,8 @@
 tests: test_base64
 
+test12: challenge12
+	./challenge12
+
 test11: challenge11
 	./challenge11
 
@@ -34,6 +37,9 @@ challenge10.o: challenge10.c
 challenge11.o: challenge11.c
 	gcc -c challenge11.c -I ../set1
 
+challenge12.o: challenge12.c
+	gcc -c challenge12.c -I ../set1
+
 UTILS := ../set1
 utils.o: $(UTILS)/utils.c
 	gcc -c $(UTILS)/utils.c -I $(UTILS)
@@ -43,6 +49,9 @@ challenge10: challenge10.o utils.o cbc_ecb128.o
 
 challenge11: challenge11.o utils.o cbc_ecb128.o
 	gcc -o challenge11 challenge11.o utils.o cbc_ecb128.o -lssl -lcrypto -lm
+
+challenge12: challenge12.o utils.o cbc_ecb128.o
+	gcc -o challenge12 challenge12.o utils.o cbc_ecb128.o -lssl -lcrypto -lm
 
 do_test_ecb128.o: do_test_ecb128.c
 	gcc -c do_test_ecb128.c -I ../set1
