@@ -1,5 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
+unsigned char *randomX(unsigned char *data, size_t len);
+unsigned char *random16(unsigned char data[16]);
 unsigned char nibble_convert(char c);
 unsigned char hex_convert(char *s);
 void decode_hex_string(char *s, unsigned char *bytes, int byte_count);

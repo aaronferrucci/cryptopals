@@ -39,20 +39,6 @@ unsigned char *pad(size_t len, size_t block_size)
 // should end up with a piece of code that, pointed at a block box that 
 // might be encrypting ECB or CBC, tells you which one is happening.
 
-unsigned char *randomX(unsigned char *data, size_t len)
-{
-  for (int i = 0; i < len; ++i) {
-    data[i] = rand() & 0xFF;
-  }
-  
-  return data;
-}
-
-unsigned char *random16(unsigned char data[16])
-{
-  return randomX(data, 16);
-}
-
 #define ITERS 1024
 // returns the data, padded and encrypted. Caller frees.
 unsigned char actual_log[ITERS];

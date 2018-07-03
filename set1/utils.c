@@ -257,3 +257,17 @@ void print16(unsigned char *data)
   printLine(data, 16);
 }
 
+unsigned char *randomX(unsigned char *data, size_t len)
+{
+  for (int i = 0; i < len; ++i) {
+    data[i] = rand() & 0xFF;
+  }
+  
+  return data;
+}
+
+unsigned char *random16(unsigned char data[16])
+{
+  return randomX(data, 16);
+}
+
