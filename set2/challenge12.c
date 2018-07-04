@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <time.h>
+#include <assert.h>
 
 #include "cbc_ecb128.h"
 #include "utils.h"
@@ -70,6 +71,29 @@ void deinit(void)
   unknown_string = NULL;
 }
 
+void detect_ecb(int block_size)
+{
+  // ecb encrypts identical blocks identically
+  // given block size N, repeated characters of length 3 * N
+  // will be encrypted as 3 repeated blocks.
+  unsigned char *text = malloc(3 * block_size * sizeof(unsigned char));
+  for (int i = 0; i < 3 * block_size; ++i)
+    text[i] = '*';
+  size_t out_len;
+  unsigned char *output = insecure_ecb(text, 3 * block_size, &out_len);
+  for (int i = 0; i < block_size; ++i) {
+    if (output[i] != output[i + block_size] ||
+        output[i] != output[i + 2 * block_size]) {
+      printf("Error: ECB not detected!\n");
+      return;
+    }
+  }
+
+  printf("ECB-%d detected\n", block_size);
+  free(output);
+  free(text);
+}
+
 int find_block_size(void)
 {
   int block_size = 0;
@@ -106,6 +130,8 @@ int main(void)
 
   // 2. Detect that the function is using ECB. You already know, but do this 
   // step anyway.
+  detect_ecb(block_size);
+
   // 3. Knowing the block size, craft an input block that is exactly 1 byte 
   // short (for instance, if the block size is 8 bytes, make "AAAAAAA"). Think 
   // about what the oracle function is going to put in that last byte position.
