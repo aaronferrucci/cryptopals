@@ -73,6 +73,7 @@ void deinit(void)
 
 void detect_ecb(int block_size)
 {
+  assert(sizeof(__uint128_t) == block_size);
   // ecb encrypts identical blocks identically
   // given block size N, repeated characters of length 3 * N
   // will be encrypted as 3 repeated blocks.
@@ -81,12 +82,11 @@ void detect_ecb(int block_size)
     text[i] = '*';
   size_t out_len;
   unsigned char *output = insecure_ecb(text, 3 * block_size, &out_len);
-  for (int i = 0; i < block_size; ++i) {
-    if (output[i] != output[i + block_size] ||
-        output[i] != output[i + 2 * block_size]) {
-      printf("Error: ECB not detected!\n");
-      return;
-    }
+  if (!EQ_16BYTE(output, output + block_size) ||
+      !EQ_16BYTE(output, output + 2 * block_size)
+  ) {
+    printf("Error: ECB not detected!\n");
+    return;
   }
 
   printf("ECB-%d detected\n", block_size);
@@ -117,6 +117,42 @@ int find_block_size(void)
   return block_size;
 }
 
+unsigned char decrypt_first_byte(int block_size)
+{
+  // A block of text to encrypt.
+  unsigned char *text = malloc(block_size * sizeof(unsigned char));
+  unsigned char *first_block = malloc(block_size * sizeof(unsigned char));
+
+  for (int i = 0; i <  block_size - 1; ++i)
+    text[i] = 'A';
+  size_t out_len;
+  // Encrypt with block_size-1 (so the first block is all known bytes except
+  // the last - that byte is the first byte of the unknown string.
+  unsigned char *output = insecure_ecb(text, block_size - 1, &out_len);
+  // save that first block - its last byte is the first byte of the unknown
+  // string.
+  *(__uint128_t*)first_block = *(__uint128_t*)output;
+  free(output);
+
+  int found = 0;
+  unsigned char first_byte;
+  for (int i = 0; !found && i < 256; ++i) {
+    text[block_size-1] = (unsigned char)i;
+    // Now encrypt with all <block size> bytes of text, to probe for the
+    // value of the first unknown byte.
+    unsigned char *output = insecure_ecb(text, block_size, &out_len);
+    if (EQ_16BYTE(first_block, output)) {
+      first_byte = (unsigned char)i;
+    }
+    free(output);
+  }
+  free(text);
+  free(first_block);
+
+  return first_byte;
+
+}
+
 int main(void)
 {
   printf("challenge12\n");
@@ -138,6 +174,8 @@ int main(void)
   // 4. Make a dictionary of every possible last byte by feeding different 
   // strings to the oracle; for instance, "AAAAAAAA", "AAAAAAAB", "AAAAAAAC", 
   // remembering the first block of each invocation.
+  unsigned char c0 = decrypt_first_byte(block_size);
+  printf("c0: '%c'\n", c0);
   // 5. Match the output of the one-byte-short input to one of the entries 
   // in your dictionary. You've now discovered the first byte of unknown-string.
   // 6. Repeat for the next byte.

@@ -24,4 +24,6 @@ typedef struct {
   float frequency; // in [0, 1]
   unsigned int count;
 } t_letter_frequency;
+
+#define EQ_16BYTE(pa, pb) ((*(__uint128_t*)(pa)) == (*(__uint128_t*)(pb)))
 #endif // UTILS_H
