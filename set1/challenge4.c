@@ -29,7 +29,7 @@ float score_spacey(unsigned char *data, int len) {
   return (float)scount / len;
 }
 
-float score_etaoin(unsigned char *data, int len) {
+float score_etaoin_simple(unsigned char *data, int len) {
   // Simple: ratio of 'e' and 'E' to byte count
   int ecount = 0;
   for (int i = 0; i < len; ++i) {
@@ -76,7 +76,7 @@ float get_best_key(char *input, unsigned char *best_key)
     }
     decode(copy, key, input_byte_count);
     score.printability = score_printability(copy, input_byte_count);
-    score.etaoin = score_etaoin(copy, input_byte_count);
+    score.etaoin = score_etaoin_simple(copy, input_byte_count);
     score.spacey = score_spacey(copy, input_byte_count);
     float sum = score.printability + score.etaoin + score.spacey;
 

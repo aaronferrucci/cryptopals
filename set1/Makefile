@@ -1,4 +1,8 @@
-tests: test_base64
+tests: test_base64 test1 test2 test3 test4 test5 test6 test7 test8
+
+UTILS := ../utils
+utils.o: $(UTILS)/utils.c $(UTILS)/utils.h
+	gcc -c $(UTILS)/utils.c -I $(UTILS)
 
 .PHONY: test_base64 
 test_base64: test_decode64
@@ -13,8 +17,8 @@ test_base64: test_decode64
 	"TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlzIHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2YgdGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGludWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRoZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4=" \
 	"Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure."
 
-test_decode64.o: test_decode64.c utils.h
-	gcc -c test_decode64.c
+test_decode64.o: test_decode64.c $(UTILS)/utils.h
+	gcc -c test_decode64.c -I $(UTILS)
 
 test_decode64: test_decode64.o utils.o
 	gcc -o test_decode64 test_decode64.o utils.o -lm
@@ -46,32 +50,29 @@ test7: challenge7
 test8: challenge8
 	./challenge8
 
-utils.o: utils.c utils.h
-	gcc -c utils.c
+challenge1.o: challenge1.c $(UTILS)/utils.h
+	gcc -c challenge1.c -I $(UTILS)
 
-challenge1.o: challenge1.c
-	gcc -c challenge1.c
+challenge2.o: challenge2.c $(UTILS)/utils.h
+	gcc -c challenge2.c -I $(UTILS)
 
-challenge2.o: challenge2.c
-	gcc -c challenge2.c
+challenge3.o: challenge3.c $(UTILS)/utils.h
+	gcc -c challenge3.c -I $(UTILS)
 
-challenge3.o: challenge3.c utils.h
-	gcc -c challenge3.c
-
-challenge4.o: challenge4.c c4_data.h utils.h
-	gcc -c challenge4.c
+challenge4.o: challenge4.c c4_data.h $(UTILS)/utils.h
+	gcc -c challenge4.c -I $(UTILS)
 
 challenge5.o: challenge5.c
 	gcc -c challenge5.c
 
-challenge6.o: challenge6.c c6_data.h utils.h
-	gcc -c challenge6.c
+challenge6.o: challenge6.c c6_data.h $(UTILS)/utils.h
+	gcc -c challenge6.c -I $(UTILS)
 
-challenge7.o: challenge7.c c7_data.h utils.h
-	gcc -c challenge7.c
+challenge7.o: challenge7.c c7_data.h $(UTILS)/utils.h
+	gcc -c challenge7.c -I $(UTILS)
 
-challenge8.o: challenge8.c c8_data.h
-	gcc -c challenge8.c
+challenge8.o: challenge8.c c8_data.h $(UTILS)/utils.h
+	gcc -c challenge8.c -I $(UTILS)
 
 challenge1: challenge1.o utils.o
 	gcc -o challenge1 challenge1.o utils.o -lm
@@ -94,7 +95,7 @@ challenge6: challenge6.o utils.o
 challenge7: challenge7.o utils.o
 	gcc -o challenge7 challenge7.o -lssl -lcrypto utils.o -lm
 
-challenge8: challenge8.o
+challenge8: challenge8.o utils.o
 	gcc -o challenge8 challenge8.o utils.o -lm
 
 clean:
