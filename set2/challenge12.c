@@ -117,40 +117,53 @@ int find_block_size(void)
   return block_size;
 }
 
-unsigned char decrypt_first_byte(int block_size)
+unsigned char *decrypt(int block_size, size_t *decrypt_len)
 {
   // A block of text to encrypt.
   unsigned char *text = malloc(block_size * sizeof(unsigned char));
   unsigned char *first_block = malloc(block_size * sizeof(unsigned char));
+  unsigned char *decrypted = malloc(block_size * sizeof(unsigned char));
+  *decrypt_len = 0;
 
-  for (int i = 0; i <  block_size - 1; ++i)
+  // Set a known value for the text block. The specific value chosen doesn't
+  // matter. I'll overwrite with different values, starting at the end.
+  for (int i = 0; i < block_size; ++i)
     text[i] = 'A';
-  size_t out_len;
-  // Encrypt with block_size-1 (so the first block is all known bytes except
-  // the last - that byte is the first byte of the unknown string.
-  unsigned char *output = insecure_ecb(text, block_size - 1, &out_len);
-  // save that first block - its last byte is the first byte of the unknown
-  // string.
-  *(__uint128_t*)first_block = *(__uint128_t*)output;
-  free(output);
 
-  int found = 0;
-  unsigned char first_byte;
-  for (int i = 0; !found && i < 256; ++i) {
-    text[block_size-1] = (unsigned char)i;
-    // Now encrypt with all <block size> bytes of text, to probe for the
-    // value of the first unknown byte.
-    unsigned char *output = insecure_ecb(text, block_size, &out_len);
-    if (EQ_16BYTE(first_block, output)) {
-      first_byte = (unsigned char)i;
-    }
+  for (int k = 0; k < block_size; ++k) {
+    // The 1st k bytes are known; now find the <k+1>th byte.
+    size_t out_len;
+    // Encrypt with block_size-(k+1) (so the first block is all known bytes except
+    // the last k+1 bytes, which are the 1st k+1 bytes of the unknown string.
+    unsigned char *output = insecure_ecb(text, block_size - (k+1), &out_len);
+    // save the first block of the output - it'll be a signature for detecting
+    // the first k+1 bytes of the unknown string
+    *(__uint128_t*)first_block = *(__uint128_t*)output;
     free(output);
+
+    int found = 0;
+    // Copy the already-known <k> bytes into text. 
+    for (int i = 0; i < k; ++i)
+      text[block_size - k - 1 + i] = decrypted[i];
+
+    for (int i = 0; !found && i < 256; ++i) {
+      text[block_size-1] = (unsigned char)i;
+      // Now encrypt with all <block size> bytes of text, to probe for the
+      // value of the first unknown byte.
+      unsigned char *output = insecure_ecb(text, block_size, &out_len);
+      if (EQ_16BYTE(first_block, output)) {
+        decrypted[k] = (unsigned char)i;
+        found = 1;
+      }
+      free(output);
+    }
+    (*decrypt_len)++;
   }
+
   free(text);
   free(first_block);
 
-  return first_byte;
-
+  return decrypted;
 }
 
 int main(void)
@@ -174,8 +187,14 @@ int main(void)
   // 4. Make a dictionary of every possible last byte by feeding different 
   // strings to the oracle; for instance, "AAAAAAAA", "AAAAAAAB", "AAAAAAAC", 
   // remembering the first block of each invocation.
-  unsigned char c0 = decrypt_first_byte(block_size);
-  printf("c0: '%c'\n", c0);
+  size_t decrypt_len = 0;
+  unsigned char *decrypted = decrypt(block_size, &decrypt_len);
+  for (int i = 0; i < decrypt_len; ++i) {
+    printf("%c", isprint(decrypted[i]) ? decrypted[i] : '*');
+  }
+  printf("\n");
+
+  free(decrypted);
   // 5. Match the output of the one-byte-short input to one of the entries 
   // in your dictionary. You've now discovered the first byte of unknown-string.
   // 6. Repeat for the next byte.
