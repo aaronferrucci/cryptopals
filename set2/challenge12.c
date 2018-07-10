@@ -163,33 +163,81 @@ unsigned char *decrypt(int block_size, size_t *decrypt_len)
   unsigned char *encrypted_block = NULL;
   unsigned char *decrypted = NULL;
   size_t out_len;
-  int unknown_num_blocks = 0;
+  int num_blocks = 0;
   *decrypt_len = 0;
 
   {
     // Calculate how many blocks (bytes) of "unknown string" there are -
     // allocate space for them.
     unsigned char *output = insecure_ecb("", 0, &out_len);
-    unknown_num_blocks = out_len / block_size;
+    num_blocks = out_len / block_size;
     decrypted = malloc(out_len * sizeof(unsigned char));
     text = malloc(block_size * sizeof(unsigned char));
     encrypted_block = malloc(block_size * sizeof(unsigned char));
   }
 
-  for (int block = 0; block < 2; ++block) {
-    // Set known values for the text block. For the first block, any value will
-    // do (use 'A'). For subsequent blocks, values from the previous decrypted
-    // block are used.
-    // For each decrypted byte, I'll overwrite a new value at the
-    // end of the text block.
-    for (int i = 0; i < block_size; ++i)
-      text[i] = 'A';
-
+  for (int block = 0; block < num_blocks; ++block) {
     for (int k = 0; k < block_size; ++k) {
       // The 1st k bytes of this block are known; now find the <k+1>th byte.
       // Encrypt with block_size-(k+1) (so the first encrypted block is all
       // known bytes except the last k+1 bytes, which are the 1st k+1 bytes
       // of the unknown string.
+      //
+      // Here's the tricky part: block 0 is used as a probing block to find the
+      // next unknown byte. That unknown byte is in blocks 0, 1, ...
+      // Set known values for the text block. For the first block, any value 
+      // will do (use 'A'). For subsequent blocks, values from the previous 
+      // decrypted block are used.
+      // For each decrypted byte, I'll overwrite a new value at the
+      // end of the text block.
+      // 1st block (8-byte block example):
+      //  k  len      text  1st block
+      //  0    7   AAAAAAA.  AAAAAAA1
+      //  1    6   AAAAAA1.  AAAAAA12
+      //  2    5   AAAAA12.  AAAAA123
+      //  3    4   AAAA123.  AAAA1234
+      //  4    3   AAA1234.  AAA12345
+      //  5    2   AA12345.  AA123456
+      //  6    1   A123456.  A1234567
+      //  7    0   1234567.  12345678
+      //       2nd block
+      //  k  len      text  2nd block
+      //  0    7   2345678.  23456789
+      //  1    6   3456789.  3456789A
+      //  2    5   456789A.  456789AB
+      //  3    4   56789AB.  56789ABC
+      //  4    3   6789ABC.  6789ABCD
+      //  5    2   789ABCD.  789ABCDE
+      //  6    1   89ABCDE.  89ABCDEF
+      //  7    0   9ABCDEF.  9ABCDEF0
+      //
+      //   Method:
+      //   1) create 'text' as a function of block, k.
+      //      write <block size> - 1 bytes, starting at index 0
+      //      text[i] = decrypted[(block - 1) * block_size + k + 1 + i]
+      //      (when decrypted index (block - 1) * block_size + k + 1 + i is
+      //      negative, use 'A')
+      //   2) encrypt, using length <block_size> - 1 - k
+      //   3) save encrypted block <block> for later matching
+      //   4) repeat over all bytes x:
+      //      overwrite the last byte of text with 'x'
+      //      encrypt, using size <block size>
+      //      check for equality between 1st block and saved block
+      //        on a match, save x as the next decrypted byte.
+
+      for (int i = 0; i < block_size - 1; ++i) {
+        int index = (block - 1) * block_size + k + 1 + i;
+        if (index >= 0)
+          text[i] = decrypted[index];
+        else
+          text[i] = 'A';
+      }
+      // just for debug clarity: clear the last byte (it'll be set in the loop
+      // below).
+      text[block_size - 1] = '\0';
+      // printf("block: %d; k: %d\n", block, k);
+      // print16(text);
+      // printf("\n");
       unsigned char *output =
         insecure_ecb(text, block_size - (k+1), &out_len);
 
@@ -200,23 +248,14 @@ unsigned char *decrypt(int block_size, size_t *decrypt_len)
       free(output);
 
       int found = 0;
-      // Copy the already-known <k> bytes into text.
-      for (int i = 0; i < k; ++i)
-        text[block_size - k - 1 + i] = decrypted[i + block * block_size];
-      // just for debug clarity: clear the last byte (it'll be set in the loop
-      // below).
-      text[block_size - 1] = '\0';
-      printf("block: %d; k: %d\n", block, k);
-      print16(text);
-      printf("\n");
-
-      for (int i = 0; !found && i < 256; ++i) {
-        text[block_size - 1] = (unsigned char)i;
+      for (int x = 0; !found && x < 256; ++x) {
+        // Each value of 'x' is a candidate for the next decrypted byte.
+        text[block_size - 1] = (unsigned char)x;
         // Now encrypt with all <block size> bytes of text, to probe for the
         // value of the first unknown byte.
         unsigned char *output = insecure_ecb(text, block_size, &out_len);
-        if (EQ_16BYTE(encrypted_block, output + block * block_size)) {
-          decrypted[k + block * block_size] = (unsigned char)i;
+        if (EQ_16BYTE(output, encrypted_block)) {
+          decrypted[k + block * block_size] = (unsigned char)x;
           found = 1;
         }
         free(output);
@@ -255,10 +294,9 @@ int main(void)
   size_t decrypt_len = 0;
   unsigned char *decrypted = decrypt(block_size, &decrypt_len);
   for (int i = 0; i < decrypt_len; ++i) {
-    printf("%c", isprint(decrypted[i]) ? decrypted[i] : '*');
+    printf("%c", decrypted[i]);
   }
   printf("\n");
-
   free(decrypted);
   // 5. Match the output of the one-byte-short input to one of the entries
   // in your dictionary. You've now discovered the first byte of unknown-string.
