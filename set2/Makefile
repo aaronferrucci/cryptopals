@@ -48,7 +48,7 @@ challenge12.o: challenge12.c $(UTILS)/utils.h
 	gcc -c challenge12.c -I $(UTILS)
 
 challenge13.o: challenge13.c $(UTILS)/utils.h
-	gcc -c challenge13.c -I $(UTILS)
+	gcc -g -c challenge13.c -I $(UTILS)
 
 challenge10: challenge10.o utils.o cbc_ecb128.o
 	gcc -o challenge10 challenge10.o utils.o cbc_ecb128.o -lssl -lcrypto -lm

@@ -172,40 +172,49 @@ void delete(t_profile **pprof)
 int main(void)
 {
   init();
-  unsigned char *emails[] = {
-    "a123456@b.com",
-  };
-  t_profile *prof;
-  unsigned char *prof_str;
+  unsigned char *probe_email =
+    "789ABCDEF0admin\xb\xb\xb\xb\xb\xb\xb\xb\xb\xb\xb";
+  t_profile *probe = profile_for(probe_email);
+  unsigned char *probe_str = to_str(probe);
 
-  for (int i = 0; i < sizeof(emails) / sizeof(*emails); ++i) {
-    prof = profile_for(emails[i]);
-    print(prof);
+  size_t out_len;
+  unsigned char *crypt = ecb_encrypt(probe_str, strlen(probe_str), &out_len);
+  printf("encrypted probe:\n");
+  printX(crypt, out_len);
+  printf("\n");
 
-    prof_str = to_str(prof);
-    printf("%s\n\n", prof_str);
+  __uint128_t save_block = *(__uint128_t*)(crypt + 16);
+  free(crypt);
 
-    size_t out_len;
-    unsigned char *crypt = ecb_encrypt(prof_str, strlen(prof_str), &out_len);
-    printf("encrypted:\n");
-    printX(crypt, out_len);
-    printf("\n");
+  unsigned char *template_email = "foo12@bar.com";
+  t_profile *template = profile_for(template_email);
+  unsigned char *template_str = to_str(template);
+  crypt = ecb_encrypt(template_str, strlen(template_str), &out_len);
+  printf("encrypted template:\n");
+  printX(crypt, out_len);
+  printf("\n");
 
-    unsigned char *decrypt = ecb_decrypt(crypt, out_len);
-    printf("decrypted, unpadded:\n");
-    printf("%s\n\n", decrypt);
+  *(__uint128_t*)(crypt + 32) = save_block;
+  printf("patched template:\n");
+  printX(crypt, out_len);
+  printf("\n");
 
-    printf("parsed:\n");
-    t_profile *prof2 = parse(decrypt);
-    print(prof2);
-    printf("\n");
+  unsigned char *decrypt = ecb_decrypt(crypt, out_len);
+  printf("patched, decrypted, unpadded:\n");
+  printf("%s\n\n", decrypt);
 
-    delete(&prof);
-    delete(&prof2);
-    free(prof_str);
-    free(crypt);
-    free(decrypt);
-  }
+  printf("parsed:\n");
+  t_profile *prof2 = parse(decrypt);
+  print(prof2);
+  printf("\n");
+
+  delete(&probe);
+  delete(&template);
+  delete(&prof2);
+  free(probe_str);
+  free(template_str);
+  free(crypt);
+  free(decrypt);
 
   deinit();
   return 0;
