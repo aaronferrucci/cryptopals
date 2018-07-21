@@ -21,6 +21,9 @@ test12: challenge12
 test13: challenge13
 	./challenge13
 
+test14: challenge14
+	./challenge14
+
 test_ecb128: do_test_ecb128
 	./do_test_ecb128 > output.txt
 	cat output.txt
@@ -50,6 +53,9 @@ challenge12.o: challenge12.c $(UTILS)/utils.h
 challenge13.o: challenge13.c $(UTILS)/utils.h
 	gcc -g -c challenge13.c -I $(UTILS)
 
+challenge14.o: challenge14.c $(UTILS)/utils.h
+	gcc -c challenge14.c -I $(UTILS)
+
 challenge10: challenge10.o utils.o cbc_ecb128.o
 	gcc -o challenge10 challenge10.o utils.o cbc_ecb128.o -lssl -lcrypto -lm
 
@@ -61,6 +67,9 @@ challenge12: challenge12.o utils.o cbc_ecb128.o
 
 challenge13: challenge13.o utils.o cbc_ecb128.o
 	gcc -o challenge13 challenge13.o utils.o cbc_ecb128.o -lssl -lcrypto -lm
+
+challenge14: challenge14.o utils.o cbc_ecb128.o
+	gcc -o challenge14 challenge14.o utils.o cbc_ecb128.o -lssl -lcrypto -lm
 
 do_test_ecb128.o: do_test_ecb128.c $(UTILS)/utils.h
 	gcc -c do_test_ecb128.c -I $(UTILS) -I ../set1
