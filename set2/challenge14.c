@@ -43,6 +43,7 @@ void init()
 
   if (prefix_len == 0)
     prefix_len = 1 + rand() % 128;
+  printf("prefix_len: %d\n", prefix_len);
 }
 
 // aes-128-ecb(random_string || input || unknown_string, key)
@@ -78,7 +79,52 @@ void deinit(void)
   unknown_string = NULL;
 }
 
-int detect_ecb(int block_size)
+// return the index of the 1st block which has a duplicate,
+// or -1 if not found.
+// Return value is units of block size, example: 0 means 1st block, 
+// 1 means 2nd block...
+int find_identical_blocks(size_t block_size, unsigned char *crypt, size_t len)
+{
+  int match = -1;
+
+  for (int i = 1; i < len / block_size; i ++) {
+    if (EQ_16BYTE(crypt + (i - 1) * block_size, crypt + i * block_size)) {
+      match = i - 1;
+      break;
+    }
+  }
+
+  return match;
+}
+
+int measure_prefix_len(const size_t block_size)
+{
+  int measured_prefix_len = -1;;
+  unsigned char plaintext[3 * block_size];
+  for (int i = 0; i < 3 * block_size; ++i)
+    plaintext[i] = 'A';
+
+  // find the smallest plaintext length which yields a repeated block
+  // plaintext lengths range from <2 * block_size> to <3 * block_size - 1>
+  for (int i = 2 * block_size; i < 3 * block_size; ++i) {
+    size_t out_len;
+    unsigned char *output = insecure_ecb(plaintext, i, &out_len);
+    int match = find_identical_blocks(block_size, output, out_len);
+    free(output);
+
+    if (match != -1) {
+      printf("match: %d; plaintext len: %d\n", match, i);
+      measured_prefix_len = match * block_size - (i % block_size);
+      printf("measured prefix len: %d\n", measured_prefix_len);
+      break;
+    }
+  }
+
+
+  return measured_prefix_len;
+}
+
+int detect_ecb(size_t block_size)
 {
   int ecb_detected = 0;
   assert(sizeof(__uint128_t) == block_size);
@@ -93,25 +139,21 @@ int detect_ecb(int block_size)
   size_t out_len;
   unsigned char *output = insecure_ecb(text, blocks * block_size, &out_len);
 
-  // TO DO: detect <blocks - 1> repeated blocks. That indicates ECB.
-  for (int i = block_size; i < out_len; i += block_size) {
-    if (EQ_16BYTE(output + i - block_size, output + i)) {
-      ecb_detected = 1;
-      goto cleanup_and_exit;
-    }
+  int match = find_identical_blocks(block_size, output, out_len);
+  printf("match: %d\n", match);
+  if (match != -1) {
+    ecb_detected = 1;
   }
 
-
-cleanup_and_exit:
   free(output);
   free(text);
 
   return ecb_detected;
 }
 
-int find_block_size(void)
+size_t find_block_size(void)
 {
-  int block_size = 0;
+  size_t block_size = 0;
   unsigned char *text = malloc(128 * sizeof(unsigned char));
   for (int i = 0; i < 128; ++i)
     text[i] = 'A';
@@ -122,7 +164,7 @@ int find_block_size(void)
     free(output);
     if (prev_len) {
       if (prev_len != out_len) {
-        block_size = (int)(out_len - prev_len);
+        block_size = out_len - prev_len;
         break;
       }
     }
@@ -305,6 +347,9 @@ int main(void)
     return -1;
   }
   printf("ECB-%d detected\n", block_size);
+
+  int measured_prefix_len = measure_prefix_len(block_size);
+  assert(measured_prefix_len == prefix_len);
 
   // 3. Knowing the block size, craft an input block that is exactly 1 byte
   // short (for instance, if the block size is 8 bytes, make "AAAAAAA"). Think
